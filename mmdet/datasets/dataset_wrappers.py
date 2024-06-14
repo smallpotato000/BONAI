@@ -76,6 +76,11 @@ class ConcatDataset(_ConcatDataset):
         assert len(results) == self.cumulative_sizes[-1], \
             f'wrong sizes{self.cumulative_sizes[-1]} v.s. {len(results)}'
 
+        # Check whether all the datasets support evaluation
+        for dataset in self.datasets:
+            assert hasattr(dataset, 'evaluate'), \
+                    f'{type(dataset)} does not implement evaluate function'
+
         if self.separate_eval:
             dataset_idx = -1
             total_eval_results = dict()
@@ -91,9 +96,9 @@ class ConcatDataset(_ConcatDataset):
                     logger=logger)
 
                 eval_results_per_dataset = dataset.evaluate(
-                    results_per_dataset, **kwargs)
+                    results_per_dataset, logger=logger, **kwargs)
                 dataset_idx += 1
-                for k, v in eval_results_per_dataset:
+                for k, v in eval_results_per_dataset.items():
                     total_eval_results.update({f'{k}_{dataset_idx}': v})
 
             return total_eval_results
@@ -106,10 +111,11 @@ class ConcatDataset(_ConcatDataset):
                 'All the datasets should have same types')
         else:
             original_data_infos = self.datasets[0].data_infos
-            self.dataset[0].data_infos = sum(
+            self.datasets[0].data_infos = sum(
                 [dataset.data_infos for dataset in self.datasets], [])
-            eval_results = self.dataset[0].evaluate(results, metric, **kwargs)
-            self.dataset[0].data_infos = original_data_infos
+            eval_results = self.datasets[0].evaluate(
+                results, metric, logger=logger, **kwargs)
+            self.datasets[0].data_infos = original_data_infos
             return eval_results
 
 @DATASETS.register_module()

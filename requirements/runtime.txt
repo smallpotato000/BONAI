@@ -1,5 +1,5 @@
 matplotlib
 numpy
-mmpycocotools@12.0.3
+mmpycocotools
 six
 terminaltables
